@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Экспедиционный Чек-лист: Легенда Басана</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        desert: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .bg-hero-pattern {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95)), 
+                              url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(217, 119, 6, 0.5);
+            border-radius: 4px;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card-active {
+            background: rgba(217, 119, 6, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        .checkbox-anim {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .completed-text {
+            text-decoration: line-through;
+            opacity: 0.65;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-slate-900 custom-scrollbar">
+
+    <header class="relative bg-hero-pattern py-10 px-4 sm:px-6 lg:px-8 border-b border-amber-500/20 shadow-2xl">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-3">
+                        <span>🧭 Научно-познавательная экспедиция</span>
+                    </div>
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight font-serif">
+                        Проверь легенду <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500">Басана</span>
+                    </h1>
+                    <p class="mt-2 text-slate-300 max-w-2xl text-sm sm:text-base leading-relaxed">
+                        Интерактивный чек-лист экспедиции. Собери снаряжение, пройди 7 научных испытаний горы и раскрой её тайны!
+                    </p>
+                </div>
+
+                <!-- Overall Progress Indicator -->
+                <div class="flex flex-col items-center justify-center glass-card p-5 rounded-2xl min-w-[200px] border border-amber-500/20 shadow-lg">
+                    <div class="relative w-24 h-24 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-slate-700" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path id="progress-circle" class="text-amber-500 transition-all duration-700 ease-out" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <div class="absolute flex flex-col items-center">
+                            <span id="progress-percent" class="text-2xl font-bold text-white">0%</span>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-widest">Прогресс</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-amber-300 font-medium text-center" id="progress-status-text">
+                        0 из 7 заданий выполнено
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex flex-wrap gap-2 border-t border-slate-700/60 pt-6">
+                <button onclick="switchTab('gear')" id="tab-gear" class="tab-btn px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 bg-amber-500 text-slate-950 font-semibold shadow-lg shadow-amber-500/20 transition-all">
+                    <span>🎒 1. Рюкзак экспедиции</span>
+                    <span id="gear-badge" class="bg-slate-900 text-amber-400 text-xs px-2 py-0.5 rounded-full">0/5</span>
+                </button>
+                <button onclick="switchTab('tasks')" id="tab-tasks" class="tab-btn px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+                    <span>🔍 2. Задания исследования</span>
+                    <span id="tasks-badge" class="bg-slate-900 text-slate-400 text-xs px-2 py-0.5 rounded-full">0/7</span>
+                </button>
+                <button onclick="switchTab('notes')" id="tab-notes" class="tab-btn px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all">
+                    <span>📝 Дневник полевых заметок</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <section id="content-gear" class="space-y-6">
+            <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-1">Возьми с собой для исследования</h2>
+                    <p class="text-xs sm:text-sm text-slate-300">Подготовка — ключ к успешной и безопасной экспедиции. Отмечай снаряжение по мере сбора.</p>
+                </div>
+                <button onclick="toggleAllGear(true)" class="text-xs text-amber-400 hover:text-amber-300 font-medium px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition whitespace-nowrap">
+                    Собрать всё
+                </button>
+            </div>
+
+            <div id="gear-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Gear Item Cards Rendered via JavaScript -->
+            </div>
+        </section>
+
+        <section id="content-tasks" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>Гипотезы и экспериментальные задания</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Нажимай на карточки для отметок и используй кнопки «Подсказка» для раскрытия научных тайн.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleAllTasks(true)" class="text-xs text-amber-400 hover:text-amber-300 font-medium px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition">
+                        Отметить всё
+                    </button>
+                    <button onclick="resetTasksProgress()" class="text-xs text-slate-400 hover:text-rose-400 font-medium px-3 py-1.5 rounded-lg bg-slate-700/40 hover:bg-rose-500/10 transition">
+                        Сбросить
+                    </button>
+                </div>
+            </div>
+
+            <!-- Task List Container -->
+            <div id="tasks-container" class="grid grid-cols-1 gap-5">
+                <!-- Dynamically generated task cards -->
+            </div>
+        </section>
+
+        <section id="content-notes" class="hidden space-y-6">
+            <div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50">
+                <h2 class="text-xl font-bold text-white mb-1">Полевой дневник исследователя</h2>
+                <p class="text-sm text-slate-300">Записывай свои наблюдения, замеры компаса, найденные виды растений и мысли во время подъёма на Басан.</p>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl">
+                <label for="field-notes" class="block text-sm font-medium text-amber-300 mb-2">
+                    Твои дневниковые записи (сохраняются автоматически):
+                </label>
+                <textarea id="field-notes" rows="10" placeholder="Пример: На южном склоне компас уклонялся на 15 градусов на восток. Нашли суккуленты..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 custom-scrollbar"></textarea>
+                <div class="mt-4 flex justify-between items-center text-xs text-slate-400">
+                    <span id="notes-status">Все изменения сохранены локально</span>
+                    <button onclick="clearNotes()" class="text-rose-400 hover:text-rose-300 font-medium">Очистить дневник</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="hint-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card max-w-lg w-full p-6 rounded-2xl border border-amber-500/30 shadow-2xl transform scale-95 transition-transform duration-300" id="hint-modal-card">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-700">
+                <div class="flex items-center gap-2 text-amber-400 font-bold" id="modal-title">
+                    💡 Научная справка
+                </div>
+                <button onclick="closeHintModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+                    ✕
+                </button>
+            </div>
+            <div class="py-4 text-sm text-slate-200 space-y-3 leading-relaxed" id="modal-body">
+                <!-- Content inserted dynamically -->
+            </div>
+            <div class="pt-3 border-t border-slate-700 flex justify-end">
+                <button onclick="closeHintModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition">
+                    Понятно!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+                © Интерактивный чек-лист «Легенда Басана»
+            </div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <span>Наука • Природа • Полевые исследования</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const tasksData = [
+            {
+                id: 1,
+                title: "Магнитная аномалия компаса",
+                text: "Проверь, почему странно ведут себя компасы на горе? От чего это зависит? Ты поймёшь, что наука может дать ответ на любой вопрос!",
+                hint: "<b>Научное объяснение:</b> Гора Басан содержит богатые железняком или магнетитом породы. Локальное магнитное поле пород сильнее слабого магнитного поля Земли, что вызывает 'пляску' и смещение стрелки компаса.",
+                image: "https://lh3.googleusercontent.com/d/1DGZ-qlrmNrxq-t_TYtdUYKFn8_vkYBum",
+                fallbackImage: "1.jpg",
+                tag: "Геофизика"
+            },
+            {
+                id: 2,
+                title: "Флора горы и крупный рогатый скот",
+                text: "Узнай, какие растения растут на горе? Это поможет тебе понять, почему КРС обходит гору стороной.",
+                hint: "<b>Научное объяснение:</b> На сухих склонах горы произрастают ядовитые или горькие эндемики (горчак, полынь, солянки с высоким содержанием солей и эфирных масел). Скот инстинктивно избегает их из-за горечи и риска отравления.",
+                image: "https://lh3.googleusercontent.com/d/1TENC3itx725BoYTgpE_0XJ_hy5jc1yw2",
+                fallbackImage: "2.jpeg",
+                tag: "Ботаника"
+            },
+            {
+                id: 3,
+                title: "Метка тригопункта и полусфера",
+                text: "Расчисти метку тригопункта, и ты увидишь его название. Узнай, зачем нужна полусфера в центре.",
+                hint: "<b>Научное объяснение:</b> Полусфера в центре геодезического пункта — это 'центр марки'. Она служит точной фундаментальной точкой с известными координатами и высотой, на которую устанавливается визирная веха или теодолит при геодезической съёмке.",
+                image: "https://lh3.googleusercontent.com/d/19hxhgAW8pNRMCeG6-IeD0hytQah2cDJq",
+                fallbackImage: "3.jpeg",
+                tag: "Геодезия"
+            },
+            {
+                id: 4,
+                title: "Древнее захоронение и его тайна",
+                text: "Рассмотри захоронение, и ты поймёшь, что у этой горы всё же есть нераскрытая тайна.",
+                hint: "<b>Научное объяснение:</b> Горы часто являлись сакральными местами для древних кочевых племен. Захоронения на вершинах сориентированы по сторонам света и содержат курганные конструкции, обрядовый смысл которых изучает археология.",
+                image: "https://lh3.googleusercontent.com/d/1gSXWN8kct8rd-pqSTtN-dNI17-EtxLny",
+                fallbackImage: "4.jpeg",
+                tag: "Археология"
+            },
+            {
+                id: 5,
+                title: "Акустический эффект и страх геологов",
+                text: "Присядь на склоне горы и попробуй представить, чего испугались геологи, которые устанавливали тригопункт. Проверь в разных местах горы.",
+                hint: "<b>Научное объяснение:</b> Рельеф склонов при определенных ветрах образует инфразвук (звуковые волны низкой частоты около 7-12 Гц). Инфразвук человеку не слышен, но может вызывать чувство беспричинной тревоги.",
+                image: "https://lh3.googleusercontent.com/d/11v_Zl-f0eLjVeyLwZDghckQb2QoRliR8",
+                fallbackImage: "5.jpg",
+                tag: "Акустика"
+            },
+            {
+                id: 6,
+                title: "Физическая нагрузка и недомогание",
+                text: "Поднимись на гору быстрым шагом 3 раза подряд, и ты поймёшь, почему болит голова у неопытных путешественников.",
+                hint: "<b>Научное объяснение:</b> Быстрый подъём вызывает перепад артериального давления, интенсивную нагрузку, а также сказывается воздействие яркого солнца и обезвоживание.",
+                image: "https://lh3.googleusercontent.com/d/1qsAhipE7wlNOgeFLT41m_wNvE8A0ESbU",
+                fallbackImage: "6.jpeg",
+                tag: "Физиология"
+            },
+            {
+                id: 7,
+                title: "Песчаные смерчи Басана (Пылевые дьяволы)",
+                text: "Если ты поедешь в ветреную погоду, обязательно посмотри, небольшие песчаные смерчи (пылевых дьяволов) Басана. Подумай, как это объяснить?",
+                hint: "<b>Научное объяснение:</b> Ветреный поток, огибая уступы горы, сильно разгоняется и сталкивается с восходящими потоками нагретого воздуха, формируя кружащие локальные пылевые вихри.",
+                image: "https://lh3.googleusercontent.com/d/1tDJoKsAvIGUahIglsK9T-4lnces1eayz",
+                fallbackImage: "7.jpg",
+                tag: "Метеорология"
+            }
+        ];
+
+        // Gear Items Data
+        const gearData = [
+            {
+                id: "gear-1",
+                name: "2 компаса: современный и старого образца",
+                desc: "Для сравнения показаний магнитной стрелки в местах аномалий.",
+                icon: "🧭"
+            },
+            {
+                id: "gear-2",
+                name: "Приложение PlantNet для определения растений",
+                desc: "Для быстрого распознавания растений на склонах горы.",
+                icon: "📱"
+            },
+            {
+                id: "gear-3",
+                name: "Флейцы (или другие кисти) для удаления пыли с тригопункта",
+                desc: "Чтобы аккуратно расчистить надписи и метку.",
+                icon: "🖌️"
+            },
+            {
+                id: "gear-4",
+                name: "Шоколад для восполнения сил",
+                desc: "Быстрый источник энергии после активных подъёмов.",
+                icon: "🍫"
+            },
+            {
+                id: "gear-5",
+                name: "Хорошее настроение и любимых людей",
+                desc: "Главный спутник в увлекательном путешествии!",
+                icon: "😃"
+            }
+        ];
+
+        let state = {
+            completedTasks: [],
+            checkedGear: [],
+            notes: ""
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderGear();
+            renderTasks();
+            initNotes();
+            updateProgress();
+        });
+
+        function loadState() {
+            const saved = localStorage.getItem('basan_expedition_state_v2');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                } catch (e) {
+                    console.error("State parse error", e);
+                }
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('basan_expedition_state_v2', JSON.stringify(state));
+            updateProgress();
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = tasksData.map(task => {
+                const isDone = state.completedTasks.includes(task.id);
+                return `
+                    <div class="glass-card ${isDone ? 'glass-card-active' : ''} p-5 sm:p-6 rounded-2xl transition-all duration-300 hover:border-amber-500/40 relative overflow-hidden group">
+                        <div class="flex flex-col md:flex-row items-start md:items-center gap-5">
+                            
+                            <button onclick="toggleTask(${task.id})" class="checkbox-anim flex-shrink-0 mt-1 md:mt-0 w-8 h-8 rounded-xl border-2 ${isDone ? 'bg-amber-500 border-amber-400 text-slate-950' : 'border-slate-600 bg-slate-800/80 hover:border-amber-400'} flex items-center justify-center transition-colors">
+                                ${isDone ? '<svg class="w-5 h-5 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                            </button>
+
+                            <div class="w-full md:w-32 h-28 md:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-slate-900 border border-slate-700/60 relative">
+                                <img src="${task.image}" alt="${task.title}" onerror="this.onerror=null; this.src='${task.fallbackImage || 'https://placehold.co/600x400/1e293b/f59e0b?text=Фото+№'+task.id}';" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                                <span class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur text-[10px] text-amber-300 font-semibold px-2 py-0.5 rounded-full border border-amber-500/30">
+                                    ${task.tag}
+                                </span>
+                            </div>
+
+                            <div class="flex-grow space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-amber-400">Пункт №${task.id}</span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-bold text-white leading-snug ${isDone ? 'completed-text' : ''}">
+                                    ${task.title}
+                                </h3>
+                                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed ${isDone ? 'opacity-70' : ''}">
+                                    ${task.text}
+                                </p>
+                            </div>
+
+                            <div class="flex flex-row md:flex-col items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-700/50">
+                                <button onclick="openHintModal(${task.id})" class="text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-2 rounded-xl border border-amber-500/30 font-medium transition flex items-center gap-1.5 whitespace-nowrap">
+                                    <span>💡 Подсказка</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderGear() {
+            const container = document.getElementById('gear-container');
+            container.innerHTML = gearData.map(item => {
+                const isChecked = state.checkedGear.includes(item.id);
+                return `
+                    <div onclick="toggleGear('${item.id}')" class="glass-card ${isChecked ? 'glass-card-active' : ''} p-4 rounded-xl cursor-pointer hover:border-amber-500/40 transition-all flex items-center gap-4">
+                        <div class="w-7 h-7 rounded-lg border ${isChecked ? 'bg-amber-500 border-amber-400 text-slate-950' : 'border-slate-600 bg-slate-800'} flex items-center justify-center flex-shrink-0">
+                            ${isChecked ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+                        </div>
+                        <div class="text-2xl">${item.icon}</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white ${isChecked ? 'completed-text' : ''}">${item.name}</h4>
+                            <p class="text-xs text-slate-400 mt-0.5">${item.desc}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleTask(id) {
+            const idx = state.completedTasks.indexOf(id);
+            if (idx > -1) {
+                state.completedTasks.splice(idx, 1);
+            } else {
+                state.completedTasks.push(id);
+                if (state.completedTasks.length === tasksData.length) {
+                    triggerConfetti();
+                }
+            }
+            saveState();
+            renderTasks();
+        }
+
+        function toggleAllTasks(check) {
+            if (check) {
+                state.completedTasks = tasksData.map(t => t.id);
+                triggerConfetti();
+            } else {
+                state.completedTasks = [];
+            }
+            saveState();
+            renderTasks();
+        }
+
+        function resetTasksProgress() {
+            state.completedTasks = [];
+            saveState();
+            renderTasks();
+        }
+
+        function toggleGear(id) {
+            const idx = state.checkedGear.indexOf(id);
+            if (idx > -1) {
+                state.checkedGear.splice(idx, 1);
+            } else {
+                state.checkedGear.push(id);
+            }
+            saveState();
+            renderGear();
+        }
+
+        function toggleAllGear(check) {
+            if (check) {
+                state.checkedGear = gearData.map(g => g.id);
+            } else {
+                state.checkedGear = [];
+            }
+            saveState();
+            renderGear();
+        }
+
+        function updateProgress() {
+            const taskCount = tasksData.length;
+            const completedCount = state.completedTasks.length;
+            const percent = Math.round((completedCount / taskCount) * 100);
+
+            const circle = document.getElementById('progress-circle');
+            if (circle) {
+                circle.setAttribute('stroke-dasharray', `${percent}, 100`);
+            }
+
+            document.getElementById('progress-percent').innerText = `${percent}%`;
+            document.getElementById('progress-status-text').innerText = `${completedCount} из ${taskCount} заданий выполнено`;
+
+            document.getElementById('tasks-badge').innerText = `${completedCount}/${taskCount}`;
+            document.getElementById('gear-badge').innerText = `${state.checkedGear.length}/${gearData.length}`;
+        }
+
+        function initNotes() {
+            const textarea = document.getElementById('field-notes');
+            textarea.value = state.notes || '';
+            textarea.addEventListener('input', (e) => {
+                state.notes = e.target.value;
+                localStorage.setItem('basan_expedition_state_v2', JSON.stringify(state));
+                document.getElementById('notes-status').innerText = 'Сохранение...';
+                setTimeout(() => {
+                    document.getElementById('notes-status').innerText = 'Все изменения сохранены локально';
+                }, 800);
+            });
+        }
+
+        function clearNotes() {
+            state.notes = '';
+            document.getElementById('field-notes').value = '';
+            saveState();
+        }
+
+        function switchTab(tab) {
+            const tabs = ['gear', 'tasks', 'notes'];
+            tabs.forEach(t => {
+                const content = document.getElementById(`content-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    content.classList.remove('hidden');
+                    btn.className = "tab-btn px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 bg-amber-500 text-slate-950 font-semibold shadow-lg shadow-amber-500/20 transition-all";
+                } else {
+                    content.classList.add('hidden');
+                    btn.className = "tab-btn px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all";
+                }
+            });
+        }
+
+        function openHintModal(taskId) {
+            const task = tasksData.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('modal-title').innerHTML = `💡 Научная справка: ${task.title}`;
+            document.getElementById('modal-body').innerHTML = task.hint;
+
+            const modal = document.getElementById('hint-modal');
+            const card = document.getElementById('hint-modal-card');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        }
+
+        function closeHintModal() {
+            const modal = document.getElementById('hint-modal');
+            const card = document.getElementById('hint-modal-card');
+
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
